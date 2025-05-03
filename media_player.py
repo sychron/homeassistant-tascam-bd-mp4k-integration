@@ -16,9 +16,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
         update_method=client.get_status,
         update_interval=timedelta(seconds=30),
     )
-    # Add entity immediately without waiting for first refresh
+    # Do not block setup on initial refresh; add entity without awaiting coordinator
     async_add_entities([TascamMediaPlayer(coordinator, client, entry)], False)
-
 
 class TascamMediaPlayer(MediaPlayerEntity):
     """Media player representation of the Tascam BD-MP4k."""
@@ -59,10 +58,16 @@ class TascamMediaPlayer(MediaPlayerEntity):
         await self.coordinator.async_request_refresh()
 
     async def async_turn_on(self) -> None:
+        """Turn the device on and refresh status."""
         await self._client.power_on()
+        await self.coordinator.async_request_refresh()
+        self.async_write_ha_state()
 
     async def async_turn_off(self) -> None:
+        """Turn the device off and refresh status."""
         await self._client.power_off()
+        await self.coordinator.async_request_refresh()
+        self.async_write_ha_state()
 
     async def async_media_play(self) -> None:
         await self._client.play()
